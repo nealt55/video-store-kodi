@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<addons>
+    <addon id="skin.video.store" name="Video Store" version="1.0.0" provider-name="Video Store">
+        <requires>
+            <import addon="xbmc.gui" version="5.17.0" />
+        </requires>
+        <extension point="xbmc.gui.skin" />
+        <extension point="xbmc.addon.metadata">
+            <summary>Retro neon VHS rental-store skin</summary>
+            <description>A custom Kodi skin inspired by an old-school video rental store.</description>
+            <platform>all</platform>
+        </extension>
+    </addon>
+</addons>
