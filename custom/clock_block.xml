@@ -1,23 +1,23 @@
             <!-- VIDEO STORE NEON CLOCK -->
-            <!-- Enlarged neon sign with soft pink/blue glow. -->
+            <!-- Single replacement for the stock Arctic Zephyr clock/date. -->
             <control type="group">
                 <left>0</left>
                 <right>0</right>
                 <top>0</top>
-                <height>84</height>
+                <height>104</height>
                 <control type="image">
                     <top>0</top>
-                    <right>30</right>
-                    <width>445</width>
-                    <height>84</height>
-                    <texture>neon-clock-panel.png</texture>
+                    <right>24</right>
+                    <width>520</width>
+                    <height>104</height>
+                    <texture background="true">media/neon-clock-panel.png</texture>
                     <aspectratio>stretch</aspectratio>
                 </control>
                 <control type="label">
-                    <top>7</top>
-                    <right>145</right>
-                    <width>260</width>
-                    <height>38</height>
+                    <top>9</top>
+                    <right>166</right>
+                    <width>300</width>
+                    <height>46</height>
                     <align>right</align>
                     <aligny>center</aligny>
                     <font>LargeBold</font>
@@ -25,10 +25,10 @@
                     <label>$INFO[System.Time(hh:mm)]</label>
                 </control>
                 <control type="label">
-                    <top>9</top>
-                    <right>48</right>
-                    <width>78</width>
-                    <height>32</height>
+                    <top>12</top>
+                    <right>52</right>
+                    <width>96</width>
+                    <height>36</height>
                     <align>left</align>
                     <aligny>center</aligny>
                     <font>SmallBold</font>
@@ -37,10 +37,10 @@
                     <visible>!String.IsEmpty(System.Time(xx))</visible>
                 </control>
                 <control type="label">
-                    <top>50</top>
-                    <right>45</right>
-                    <width>355</width>
-                    <height>22</height>
+                    <top>67</top>
+                    <right>48</right>
+                    <width>424</width>
+                    <height>25</height>
                     <align>center</align>
                     <aligny>center</aligny>
                     <font>Tiny</font>
