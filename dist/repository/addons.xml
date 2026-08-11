@@ -1,14 +1,28 @@
-<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-<addons>
-    <addon id="skin.video.store" name="Video Store" version="1.0.0" provider-name="Video Store">
-        <requires>
-            <import addon="xbmc.gui" version="5.17.0" />
-        </requires>
-        <extension point="xbmc.gui.skin" />
-        <extension point="xbmc.addon.metadata">
-            <summary>Retro neon VHS rental-store skin</summary>
-            <description>A custom Kodi skin inspired by an old-school video rental store.</description>
-            <platform>all</platform>
-        </extension>
-    </addon>
-</addons>
+<?xml version='1.0' encoding='UTF-8'?>
+<addons><addon id="skin.video.store" version="1.0.0" name="Video Store" provider-name="Video Store">
+    <requires>
+        <import addon="xbmc.gui" version="5.17.0" />
+        <import addon="script.skinshortcuts" version="0.4.0" />
+        <import addon="script.globalsearch" version="5.0.0" />
+        <import addon="script.image.resource.select" version="0.0.5" />
+        <import addon="resource.images.weathericons.white" version="0.0.6" />
+        <import addon="script.embuary.info" version="0.0.1" />
+        <import addon="script.embuary.helper" version="1.2.14" />
+        <import addon="plugin.video.themoviedb.helper" version="0.0.1" />
+    </requires>
+    <extension point="xbmc.gui.skin" defaultthemename="Textures.xbt" debugging="false" effectslowdown="1">
+        <res width="1920" height="1080" aspect="16:9" default="true" folder="1080i" />
+    </extension>
+    <extension point="xbmc.addon.metadata">
+        <platform>all</platform>
+        <license>Creative Commons Non Commercial 3.0 License</license>
+        <source>https://github.com/nealt55/video-store-kodi</source>
+        <assets>
+            <icon>icon.png</icon>
+            <fanart>fanart.jpg</fanart>
+        </assets>
+        <news>1.0.0 - Initial Video Store release</news>
+        <summary lang="en">A retro neon VHS rental-store themed Kodi skin.</summary>
+        <description lang="en">Video Store is a retro neon VHS rental-store themed Kodi skin based on Arctic: Zephyr - Reloaded.</description>
+    </extension>
+</addon></addons>
