@@ -1,0 +1,104 @@
+name: Build Video Store Kodi Skin
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Read and validate version
+        shell: bash
+        run: |
+          VERSION=$(tr -d '[:space:]' < VERSION)
+          [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "Invalid VERSION: $VERSION"; exit 1; }
+          echo "VERSION=$VERSION" >> "$GITHUB_ENV"
+
+      - name: Download base skin
+        run: |
+          curl -fL --retry 3 -o base.zip https://mirrors.mit.edu/kodi/addons/piers/skin.arctic.zephyr.mod/skin.arctic.zephyr.mod-3.0.3.zip
+          rm -rf build
+          mkdir -p build
+          unzip -q base.zip -d build
+          mv build/skin.arctic.zephyr.mod build/skin.video.store
+
+      - name: Apply Video Store customisations
+        shell: bash
+        run: |
+          cp custom/skin.video.store/addon.xml build/skin.video.store/addon.xml
+          cp custom/skin.video.store/1080i/Home.xml build/skin.video.store/1080i/Home.xml
+          cp custom/skin.video.store/icon.png build/skin.video.store/icon.png
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('build/skin.video.store/1080i/Includes_Furniture.xml')
+          t=p.read_text(encoding='utf-8')
+          block=Path('custom/clock_block.xml').read_text(encoding='utf-8')
+          anchor='            <control type="label">\n                <centertop>92</centertop>\n                <right>SidePad</right>'
+          if 'VIDEO STORE NEON CLOCK' in t:
+              raise SystemExit('Clock block already present in base skin; refusing duplicate insertion')
+          if t.count(anchor) != 1:
+              raise SystemExit(f'Clock insertion anchor count is {t.count(anchor)}, expected 1')
+          t=t.replace(anchor, block+'\n\n'+anchor, 1)
+          p.write_text(t, encoding='utf-8')
+          PY
+
+          mkdir -p build/skin.video.store/media
+          cp custom/video_store_background.jpg build/skin.video.store/media/video_store_background.jpg
+          if command -v convert >/dev/null 2>&1; then
+            convert build/skin.video.store/media/video_store_background.jpg -resize 1920x1080! build/skin.video.store/media/video_store_background.jpg
+          fi
+
+          cat > /tmp/neon-clock.svg <<'SVG'
+          <svg xmlns="http://www.w3.org/2000/svg" width="445" height="84" viewBox="0 0 445 84">
+            <defs>
+              <filter id="g" x="-30%" y="-60%" width="160%" height="220%"><feGaussianBlur stdDeviation="5" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+              <linearGradient id="p" x1="0" x2="1"><stop offset="0" stop-color="#ff2aa8"/><stop offset=".5" stop-color="#35bfff"/><stop offset="1" stop-color="#ff2aa8"/></linearGradient>
+            </defs>
+            <rect x="7" y="7" width="431" height="70" rx="18" fill="#090612" fill-opacity=".92" stroke="url(#p)" stroke-width="5" filter="url(#g)"/>
+            <rect x="12" y="12" width="421" height="60" rx="15" fill="none" stroke="#35bfff" stroke-opacity=".45" stroke-width="2"/>
+          </svg>
+          SVG
+          convert /tmp/neon-clock.svg build/skin.video.store/media/neon-clock-panel.png
+
+      - name: Validate addon and build version
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import re
+          from pathlib import Path
+          v=Path('VERSION').read_text().strip()
+          x=Path('build/skin.video.store/addon.xml').read_text()
+          m=re.search(r'<addon\s+id="skin\.video\.store"\s+version="([^"]+)"', x)
+          if not m or m.group(1) != v:
+              raise SystemExit(f'Version mismatch: VERSION={v}, addon.xml={m.group(1) if m else "MISSING"}')
+          if 'version="3.0.3"' in x:
+              raise SystemExit('Old Arctic Zephyr version detected in Video Store addon.xml')
+          print(f'Validated Video Store version {v}')
+          PY
+          test -f build/skin.video.store/icon.png
+          test -f build/skin.video.store/media/video_store_background.jpg
+          test -f build/skin.video.store/media/neon-clock-panel.png
+
+      - name: Build skin ZIP
+        shell: bash
+        run: |
+          mkdir -p dist
+          cd build
+          zip -qr "../dist/skin.video.store-${VERSION}.zip" skin.video.store
+          cd ..
+          unzip -p "dist/skin.video.store-${VERSION}.zip" skin.video.store/addon.xml > /tmp/built-addon.xml
+          grep -q "id=\"skin.video.store\" version=\"${VERSION}\"" /tmp/built-addon.xml
+          test "$(unzip -l "dist/skin.video.store-${VERSION}.zip" | grep -c 'skin.video.store/addon.xml')" -eq 1
+          sha256sum "dist/skin.video.store-${VERSION}.zip" > dist/SHA256SUMS
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: video-store-${{ env.VERSION }}
+          path: dist/
