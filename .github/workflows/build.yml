@@ -27,7 +27,9 @@ jobs:
           rm -rf build
           mkdir -p build
           unzip -q base.zip -d build
-          mv build/skin.arctic.zephyr.mod build/skin.video.store
+          BASE_DIR=$(find build -mindepth 1 -maxdepth 1 -type d | head -n 1)
+          test -n "$BASE_DIR"
+          mv "$BASE_DIR" build/skin.video.store
 
       - name: Apply Video Store customisations
         shell: bash
@@ -48,13 +50,11 @@ jobs:
           t=t.replace(anchor, block+'\n\n'+anchor, 1)
           p.write_text(t, encoding='utf-8')
           PY
-
           mkdir -p build/skin.video.store/media
           cp custom/video_store_background.jpg build/skin.video.store/media/video_store_background.jpg
           if command -v convert >/dev/null 2>&1; then
             convert build/skin.video.store/media/video_store_background.jpg -resize 1920x1080! build/skin.video.store/media/video_store_background.jpg
           fi
-
           cat > /tmp/neon-clock.svg <<'SVG'
           <svg xmlns="http://www.w3.org/2000/svg" width="445" height="84" viewBox="0 0 445 84">
             <defs>
