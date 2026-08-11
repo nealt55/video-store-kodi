@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<addon id="repository.video.store" name="Video Store Repository" version="1.0.0" provider-name="Video Store">
+    <extension point="xbmc.addon.repository" name="Video Store Repository">
+        <dir>
+            <info compressed="false">https://raw.githubusercontent.com/nealt55/video-store-kodi/main/repository.video.store/addons.xml</info>
+            <checksum>https://raw.githubusercontent.com/nealt55/video-store-kodi/main/repository.video.store/addons.xml.md5</checksum>
+            <datadir zip="true">https://github.com/nealt55/video-store-kodi/raw/refs/heads/main/dist/repository</datadir>
+        </dir>
+    </extension>
+    <extension point="xbmc.addon.metadata">
+        <summary>Video Store Kodi skin repository</summary>
+        <description>Repository for the Video Store retro neon VHS rental-store Kodi skin.</description>
+        <platform>all</platform>
+    </extension>
+</addon>
