@@ -1,0 +1,1 @@
+The Video Store build is based on Arctic: Zephyr – Reloaded 3.0.3 for Kodi Omega. The build workflow pins the exact upstream commit/archive rather than downloading a moving branch or mirror file. Do not change the pinned source without deliberately updating the known-good base.
