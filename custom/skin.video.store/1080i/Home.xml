@@ -19,7 +19,7 @@
         <control type="image" id="90001" description="Video Store Background">
             <include>Dimensions_Fullscreen</include>
             <aspectratio>scale</aspectratio>
-            <texture background="true">video_store_background.jpg</texture>
+            <texture background="true">media/video_store_background.jpg</texture>
         </control>
         <include condition="!$EXP[HomeIsVerticalMultiWidgets] + !$EXP[HomeIsModernMultiWidgets]">MovieSetsList</include>
         <include condition="$EXP[HasHomemenuAutoSlideOutAnimation] | $EXP[HasHomemenuAutoSlideOutAnimationOnlyIfWidgetIsFocused]">SlideOutHomemenuButton</include>
