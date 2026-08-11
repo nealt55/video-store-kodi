@@ -81,25 +81,22 @@ jobs:
       - name: Build Kodi repository metadata and installer
         shell: bash
         run: |
-          mkdir -p dist/repository
-          cat > dist/repository/addons.xml <<EOF
-          <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
-          <addons>
-              <addon id="skin.video.store" name="Video Store" version="${VERSION}" provider-name="Video Store">
-                  <requires>
-                      <import addon="xbmc.gui" version="5.17.0" />
-                  </requires>
-                  <extension point="xbmc.gui.skin" />
-                  <extension point="xbmc.addon.metadata">
-                      <summary>Retro neon VHS rental-store skin</summary>
-                      <description>A custom Kodi skin inspired by an old-school video rental store.</description>
-                      <platform>all</platform>
-                  </extension>
-              </addon>
-          </addons>
-          EOF
+          # Kodi's repository layout requires /datadir/addon.id/addon.id-x.y.z.zip.
+          # Remove the previous published repository directory so stale flat ZIPs cannot survive.
+          rm -rf dist/repository
+          mkdir -p dist/repository/skin.video.store
+
+          python3 - <<'PY'
+          import xml.etree.ElementTree as ET
+          from pathlib import Path
+          addon = ET.parse('build/skin.video.store/addon.xml').getroot()
+          root = ET.Element('addons')
+          root.append(addon)
+          ET.ElementTree(root).write('dist/repository/addons.xml', encoding='UTF-8', xml_declaration=True)
+          PY
           md5sum dist/repository/addons.xml | cut -d' ' -f1 > dist/repository/addons.xml.md5
-          cp "dist/skin.video.store-${VERSION}.zip" "dist/repository/skin.video.store-${VERSION}.zip"
+          cp "dist/skin.video.store-${VERSION}.zip" "dist/repository/skin.video.store/skin.video.store-${VERSION}.zip"
+
           cat > /tmp/repository-addon.xml <<'EOF'
           <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
           <addon id="repository.video.store" name="Video Store Repository" version="1.0.0" provider-name="Video Store">
@@ -121,17 +118,23 @@ jobs:
           cp /tmp/repository-addon.xml dist/repository-installer/repository.video.store/addon.xml
           (cd dist/repository-installer && zip -qr "../repository.video.store-1.0.0.zip" repository.video.store)
           rm -rf dist/repository-installer
+
+          # Validate the exact Kodi repository layout and package before publishing.
           unzip -p "dist/repository.video.store-1.0.0.zip" repository.video.store/addon.xml > /tmp/repo-addon.xml
           grep -q 'id="repository.video.store" name="Video Store Repository" version="1.0.0"' /tmp/repo-addon.xml
           grep -q 'https://raw.githubusercontent.com/nealt55/video-store-kodi/main/dist/repository/' /tmp/repo-addon.xml
-          test -f "dist/repository/skin.video.store-${VERSION}.zip"
-          test "$(unzip -l "dist/repository/skin.video.store-${VERSION}.zip" | grep -c 'skin.video.store/addon.xml')" -eq 1
+          test -f "dist/repository/addons.xml"
+          test -f "dist/repository/addons.xml.md5"
+          test -f "dist/repository/skin.video.store/skin.video.store-${VERSION}.zip"
+          test "$(unzip -l "dist/repository/skin.video.store/skin.video.store-${VERSION}.zip" | grep -c 'skin.video.store/addon.xml')" -eq 1
+          grep -q "id=\"skin.video.store\" version=\"${VERSION}\"" dist/repository/addons.xml
+          test "$(cat dist/repository/addons.xml.md5)" = "$(md5sum dist/repository/addons.xml | cut -d' ' -f1)"
       - name: Publish repository files to main
         shell: bash
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add dist/repository
+          git add -A dist/repository
           if git diff --cached --quiet; then
             echo "Repository files already current"
           else
