@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
@@ -78,7 +78,69 @@ jobs:
           grep -q "id=\"skin.video.store\" version=\"${VERSION}\"" /tmp/built-addon.xml
           test "$(unzip -l "dist/skin.video.store-${VERSION}.zip" | grep -c 'skin.video.store/addon.xml')" -eq 1
           sha256sum "dist/skin.video.store-${VERSION}.zip" > dist/SHA256SUMS
+      - name: Build Kodi repository metadata and installer
+        shell: bash
+        run: |
+          mkdir -p dist/repository
+          cat > dist/repository/addons.xml <<EOF
+          <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+          <addons>
+              <addon id="skin.video.store" name="Video Store" version="${VERSION}" provider-name="Video Store">
+                  <requires>
+                      <import addon="xbmc.gui" version="5.17.0" />
+                  </requires>
+                  <extension point="xbmc.gui.skin" />
+                  <extension point="xbmc.addon.metadata">
+                      <summary>Retro neon VHS rental-store skin</summary>
+                      <description>A custom Kodi skin inspired by an old-school video rental store.</description>
+                      <platform>all</platform>
+                  </extension>
+              </addon>
+          </addons>
+          EOF
+          md5sum dist/repository/addons.xml | cut -d' ' -f1 > dist/repository/addons.xml.md5
+          cp "dist/skin.video.store-${VERSION}.zip" "dist/repository/skin.video.store-${VERSION}.zip"
+          cat > /tmp/repository-addon.xml <<'EOF'
+          <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+          <addon id="repository.video.store" name="Video Store Repository" version="1.0.0" provider-name="Video Store">
+              <extension point="xbmc.addon.repository" name="Video Store Repository">
+                  <dir>
+                      <info compressed="false">https://raw.githubusercontent.com/nealt55/video-store-kodi/main/dist/repository/addons.xml</info>
+                      <checksum>https://raw.githubusercontent.com/nealt55/video-store-kodi/main/dist/repository/addons.xml.md5</checksum>
+                      <datadir zip="true">https://github.com/nealt55/video-store-kodi/raw/refs/heads/main/dist/repository</datadir>
+                  </dir>
+              </extension>
+              <extension point="xbmc.addon.metadata">
+                  <summary>Video Store Kodi skin repository</summary>
+                  <description>Repository for the Video Store retro neon VHS rental-store Kodi skin.</description>
+                  <platform>all</platform>
+              </extension>
+          </addon>
+          EOF
+          mkdir -p dist/repository-installer/repository.video.store
+          cp /tmp/repository-addon.xml dist/repository-installer/repository.video.store/addon.xml
+          (cd dist/repository-installer && zip -qr "../repository.video.store-1.0.0.zip" repository.video.store)
+          rm -rf dist/repository-installer
+          unzip -p "dist/repository.video.store-1.0.0.zip" repository.video.store/addon.xml > /tmp/repo-addon.xml
+          grep -q 'id="repository.video.store" name="Video Store Repository" version="1.0.0"' /tmp/repo-addon.xml
+          test -f "dist/repository/skin.video.store-${VERSION}.zip"
+          test "$(unzip -l "dist/repository/skin.video.store-${VERSION}.zip" | grep -c 'skin.video.store/addon.xml')" -eq 1
+      - name: Publish repository files to main
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add dist/repository
+          if git diff --cached --quiet; then
+            echo "Repository files already current"
+          else
+            git commit -m "Publish Video Store ${VERSION} Kodi repository"
+            git push
+          fi
       - uses: actions/upload-artifact@v4
         with:
           name: video-store-${{ env.VERSION }}
-          path: dist/
+          path: |
+            dist/skin.video.store-${{ env.VERSION }}.zip
+            dist/repository.video.store-1.0.0.zip
+            dist/SHA256SUMS
