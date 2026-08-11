@@ -107,7 +107,7 @@ jobs:
                   <dir>
                       <info compressed="false">https://raw.githubusercontent.com/nealt55/video-store-kodi/main/dist/repository/addons.xml</info>
                       <checksum>https://raw.githubusercontent.com/nealt55/video-store-kodi/main/dist/repository/addons.xml.md5</checksum>
-                      <datadir zip="true">https://github.com/nealt55/video-store-kodi/raw/refs/heads/main/dist/repository</datadir>
+                      <datadir zip="true">https://raw.githubusercontent.com/nealt55/video-store-kodi/main/dist/repository/</datadir>
                   </dir>
               </extension>
               <extension point="xbmc.addon.metadata">
@@ -123,6 +123,7 @@ jobs:
           rm -rf dist/repository-installer
           unzip -p "dist/repository.video.store-1.0.0.zip" repository.video.store/addon.xml > /tmp/repo-addon.xml
           grep -q 'id="repository.video.store" name="Video Store Repository" version="1.0.0"' /tmp/repo-addon.xml
+          grep -q 'https://raw.githubusercontent.com/nealt55/video-store-kodi/main/dist/repository/' /tmp/repo-addon.xml
           test -f "dist/repository/skin.video.store-${VERSION}.zip"
           test "$(unzip -l "dist/repository/skin.video.store-${VERSION}.zip" | grep -c 'skin.video.store/addon.xml')" -eq 1
       - name: Publish repository files to main
