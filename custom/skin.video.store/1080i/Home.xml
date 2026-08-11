@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Foundation -->
+<window id="0">
+    <include condition="![Skin.HasSetting(home.vertical) + Skin.HasSetting(home.vertical.widgets)] + ![Skin.HasSetting(home.modernwidgets) + Skin.HasSetting(home.vertical.widgets)]">defaultcontroltrue</include>
+    <include>HomeDefault</include>
+    <controls>
+        <control type="image" id="90001">
+            <texture background="true">video_store_background.jpg</texture>
+            <aspectratio>scale</aspectratio>
+            <visible>!Window.IsActive(fullscreenvideo)</visible>
+        </control>
+        <include>HomeContent</include>
+    </controls>
+</window>
