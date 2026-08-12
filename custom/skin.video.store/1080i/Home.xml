@@ -15,17 +15,15 @@
     <onload condition="System.AddonIsEnabled(script.wikipedia) + String.IsEmpty(Skin.String(Wikipedia.Format.Link))">Skin.SetString(Wikipedia.Format.Link,[COLOR=Dark2]{}[/COLOR])</onload>
     <onunload condition="Skin.HasSetting(home.netflix.autoplay.trailer)">ClearProperty(listitem.trailer,home)</onunload>
     <controls>
-        <!-- Video Store fixed home background. The stock Arctic Zephyr background and playlist are deliberately not included here. -->
+        <include>GlobalBackground</include>
         <control type="image" id="90001" description="Video Store Background">
-            <left>0</left>
-            <top>0</top>
-            <width>1920</width>
-            <height>1080</height>
+            <include>Dimensions_Fullscreen</include>
             <aspectratio>scale</aspectratio>
-            <texture>special://skin/media/video_store_background.jpg</texture>
+            <texture background="true">media/video_store_background.jpg</texture>
         </control>
         <include condition="!$EXP[HomeIsVerticalMultiWidgets] + !$EXP[HomeIsModernMultiWidgets]">MovieSetsList</include>
         <include condition="$EXP[HasHomemenuAutoSlideOutAnimation] | $EXP[HasHomemenuAutoSlideOutAnimationOnlyIfWidgetIsFocused]">SlideOutHomemenuButton</include>
+        <include>HomeBackgroundPlaylist</include>
         <include>AlbumAndSetsCount</include>
         <include>ActorInfo</include>
         <include condition="$EXP[HomeIsVerticalMultiWidgets]">HomeVerticalMenuWidgets</include>
