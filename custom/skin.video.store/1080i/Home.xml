@@ -19,8 +19,8 @@
         <control type="image" id="90001" description="Video Store Background">
             <left>0</left>
             <top>0</top>
-            <width>100%</width>
-            <height>100%</height>
+            <width>1920</width>
+            <height>1080</height>
             <aspectratio>scale</aspectratio>
             <texture>special://skin/media/video_store_background.jpg</texture>
         </control>
@@ -31,7 +31,7 @@
         <include condition="$EXP[HomeIsVerticalMultiWidgets]">HomeVerticalMenuWidgets</include>
         <include condition="$EXP[HomeIsVertical]">HomeVerticalMenu</include>
         <include condition="!Skin.HasSetting(home.vertical) + !Skin.HasSetting(home.vertical.widgets)">HomeWeatherWidget</include>
-        <include condition="!Skin.HasSetting(home.vertical) + !Skin.HasSetting(home.classicwidgets) + ![Skin.HasSetting(home.modernwidgets) + Skin.HasSetting(home.vertical.widgets)]">HomeWidgetInfo</include>
+        <include condition="!Skin.HasSetting(home.vertical) + !Skin.HasSetting(home.vertical.widgets) + !Skin.HasSetting(home.classicwidgets) + !Skin.HasSetting(home.modernwidgets)">HomeWidgetInfo</include>
         <include condition="!Skin.HasSetting(home.vertical) + Skin.HasSetting(home.classicwidgets)">HomeClassicWidgets</include>
         <control type="group">
             <include condition="$EXP[HomeIsModernMultiWidgets]">Animation.HomeIsModernMultiWidgets</include>
