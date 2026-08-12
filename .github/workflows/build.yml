@@ -35,63 +35,15 @@ jobs:
           grep -q 'id="skin.arctic.zephyr.mod"' build/skin.video.store/addon.xml
           grep -q 'version="3.0.3"' build/skin.video.store/addon.xml
           echo "Using the pinned original Arctic Zephyr 3.0.3 ZIP stored in this repository."
-      - name: Apply Video Store customisations
+      - name: Apply Video Store background only
         shell: bash
         run: |
           cp custom/skin.video.store/addon.xml build/skin.video.store/addon.xml
           cp custom/skin.video.store/1080i/Home.xml build/skin.video.store/1080i/Home.xml
           cp custom/skin.video.store/icon.png build/skin.video.store/icon.png
-          python3 - <<'PY'
-          import re
-          from pathlib import Path
-
-          p = Path('build/skin.video.store/1080i/Includes_Furniture.xml')
-          t = p.read_text(encoding='utf-8')
-          block = Path('custom/clock_block.xml').read_text(encoding='utf-8').rstrip()
-
-          if 'VIDEO STORE NEON CLOCK' in t:
-              raise SystemExit('Clock block already present in base skin; refusing duplicate insertion')
-
-          token_re = re.compile(r'</?control\b[^>]*>|<control\b[^>]*/>', re.I)
-          stack = []
-          blocks = []
-          for m in token_re.finditer(t):
-              token = m.group(0)
-              if token.lower().startswith('</control'):
-                  if stack:
-                      blocks.append((stack.pop(), m.end()))
-              elif token.rstrip().endswith('/>'):
-                  blocks.append((m.start(), m.end()))
-              else:
-                  stack.append(m.start())
-
-          candidates = []
-          for start, end in blocks:
-              text = t[start:end]
-              if 'System.Time' in text and 'System.Date' in text:
-                  score = 0
-                  if 'centertop>92' in text:
-                      score += 10
-                  if 'right>SidePad' in text:
-                      score += 5
-                  candidates.append((score, end - start, start, end))
-
-          if not candidates:
-              raise SystemExit('Could not locate the stock Arctic Zephyr clock/date control')
-
-          candidates.sort(key=lambda x: (-x[0], x[1]))
-          _, _, start, end = candidates[0]
-          t = t[:start] + block + t[end:]
-
-          if t.count('VIDEO STORE NEON CLOCK') != 1:
-              raise SystemExit('Expected exactly one Video Store neon clock after replacement')
-
-          p.write_text(t, encoding='utf-8')
-          PY
           mkdir -p build/skin.video.store/media
           cp custom/video_store_background.jpg build/skin.video.store/media/video_store_background.jpg
-          cp custom/neon-clock-panel.png build/skin.video.store/media/neon-clock-panel.png
-      - name: Validate addon and build version
+      - name: Validate addon and background-only build
         shell: bash
         run: |
           python3 - <<'PY'
@@ -102,19 +54,18 @@ jobs:
           m=re.search(r'<addon\s+id="skin\.video\.store"\s+version="([^"]+)"', x)
           if not m or m.group(1) != v:
               raise SystemExit(f'Version mismatch: VERSION={v}, addon.xml={m.group(1) if m else "MISSING"}')
-          if 'version="3.0.3"' in x:
-              raise SystemExit('Old Arctic Zephyr version detected in Video Store addon.xml')
           home=Path('build/skin.video.store/1080i/Home.xml').read_text()
-          if 'media/video_store_background.jpg' not in home:
-              raise SystemExit('Video Store background is not referenced from media/video_store_background.jpg')
+          if 'special://skin/media/video_store_background.jpg' not in home:
+              raise SystemExit('Video Store background is not referenced by Home.xml')
           furniture=Path('build/skin.video.store/1080i/Includes_Furniture.xml').read_text()
-          if furniture.count('VIDEO STORE NEON CLOCK') != 1:
-              raise SystemExit('Built skin must contain exactly one Video Store neon clock')
-          print(f'Validated Video Store version {v}')
+          if 'VIDEO STORE NEON CLOCK' in furniture:
+              raise SystemExit('Clock customisation must NOT be present in the background-only build')
+          if 'System.Time' not in furniture or 'System.Date' not in furniture:
+              raise SystemExit('Original Arctic Zephyr clock/date controls are missing')
+          print(f'Validated background-only Video Store version {v}')
           PY
           test -f build/skin.video.store/icon.png
           test -f build/skin.video.store/media/video_store_background.jpg
-          test -f build/skin.video.store/media/neon-clock-panel.png
       - name: Build skin ZIP
         shell: bash
         run: |
@@ -127,7 +78,7 @@ jobs:
           grep -q "id=\"skin.video.store\" version=\"${VERSION}\"" /tmp/built-addon.xml
           test "$(unzip -l "dist/skin.video.store-${VERSION}.zip" | grep -c 'skin.video.store/addon.xml')" -eq 1
           test "$(unzip -l "dist/skin.video.store-${VERSION}.zip" | grep -c 'skin.video.store/media/video_store_background.jpg')" -eq 1
-          test "$(unzip -l "dist/skin.video.store-${VERSION}.zip" | grep -c 'skin.video.store/media/neon-clock-panel.png')" -eq 1
+          test "$(unzip -l "dist/skin.video.store-${VERSION}.zip" | grep -c 'skin.video.store/1080i/Includes_Furniture.xml')" -eq 1
           sha256sum "dist/skin.video.store-${VERSION}.zip" > dist/SHA256SUMS
       - name: Build Kodi repository metadata and installer
         shell: bash
@@ -142,7 +93,6 @@ jobs:
           PY
           md5sum dist/repository/addons.xml | cut -d' ' -f1 > dist/repository/addons.xml.md5
           cp "dist/skin.video.store-${VERSION}.zip" "dist/repository/skin.video.store/skin.video.store-${VERSION}.zip"
-
           cat > /tmp/repository-addon.xml <<'EOF'
           <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
           <addon id="repository.video.store" name="Video Store Repository" version="1.0.0" provider-name="Video Store">
@@ -165,7 +115,6 @@ jobs:
           cp /tmp/repository-addon.xml dist/repository-installer/repository.video.store/addon.xml
           (cd dist/repository-installer && zip -qr "../repository.video.store-1.0.0.zip" repository.video.store)
           rm -rf dist/repository-installer
-
           unzip -p "dist/repository.video.store-1.0.0.zip" repository.video.store/addon.xml > /tmp/repo-addon.xml
           grep -q 'id="repository.video.store" name="Video Store Repository" version="1.0.0"' /tmp/repo-addon.xml
           test -f "dist/repository/addons.xml"
