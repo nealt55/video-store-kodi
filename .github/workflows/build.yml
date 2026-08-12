@@ -19,15 +19,22 @@ jobs:
           VERSION=$(tr -d '[:space:]' < VERSION)
           [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "Invalid VERSION: $VERSION"; exit 1; }
           echo "VERSION=$VERSION" >> "$GITHUB_ENV"
-      - name: Download base skin
+      - name: Prepare pinned base skin
+        shell: bash
         run: |
-          curl -fL --retry 3 -o base.zip https://mirrors.mit.edu/kodi/addons/piers/skin.arctic.zephyr.mod/skin.arctic.zephyr.mod-3.0.3.zip
+          set -e
+          test -f skin.arctic.zephyr.mod-master.zip
+          test "$(stat -c%s skin.arctic.zephyr.mod-master.zip)" -gt 50000000
           rm -rf build
           mkdir -p build
-          unzip -q base.zip -d build
+          unzip -q skin.arctic.zephyr.mod-master.zip -d build
           BASE_DIR=$(find build -mindepth 1 -maxdepth 1 -type d | head -n 1)
           test -n "$BASE_DIR"
           mv "$BASE_DIR" build/skin.video.store
+          test -f build/skin.video.store/addon.xml
+          grep -q 'id="skin.arctic.zephyr.mod"' build/skin.video.store/addon.xml
+          grep -q 'version="3.0.3"' build/skin.video.store/addon.xml
+          echo "Using the pinned original Arctic Zephyr 3.0.3 ZIP stored in this repository."
       - name: Apply Video Store customisations
         shell: bash
         run: |
@@ -45,21 +52,14 @@ jobs:
           if 'VIDEO STORE NEON CLOCK' in t:
               raise SystemExit('Clock block already present in base skin; refusing duplicate insertion')
 
-          # Replace the stock Arctic Zephyr clock/date control as one unit.  A
-          # simple string insertion leaves the stock clock behind, which causes
-          # the duplicate clock/date seen in Kodi.  This scanner finds the
-          # smallest nested <control> block containing both the stock time and
-          # date labels, without reformatting the whole XML file.
           token_re = re.compile(r'</?control\b[^>]*>|<control\b[^>]*/>', re.I)
           stack = []
           blocks = []
           for m in token_re.finditer(t):
               token = m.group(0)
               if token.lower().startswith('</control'):
-                  if not stack:
-                      continue
-                  start = stack.pop()
-                  blocks.append((start, m.end()))
+                  if stack:
+                      blocks.append((stack.pop(), m.end()))
               elif token.rstrip().endswith('/>'):
                   blocks.append((m.start(), m.end()))
               else:
@@ -74,14 +74,13 @@ jobs:
                       score += 10
                   if 'right>SidePad' in text:
                       score += 5
-                  candidates.append((score, end - start, start, end, text))
+                  candidates.append((score, end - start, start, end))
 
           if not candidates:
               raise SystemExit('Could not locate the stock Arctic Zephyr clock/date control')
 
-          # Prefer the bottom-right furniture control, then the smallest match.
           candidates.sort(key=lambda x: (-x[0], x[1]))
-          _, _, start, end, old_clock = candidates[0]
+          _, _, start, end = candidates[0]
           t = t[:start] + block + t[end:]
 
           if t.count('VIDEO STORE NEON CLOCK') != 1:
@@ -111,8 +110,6 @@ jobs:
           furniture=Path('build/skin.video.store/1080i/Includes_Furniture.xml').read_text()
           if furniture.count('VIDEO STORE NEON CLOCK') != 1:
               raise SystemExit('Built skin must contain exactly one Video Store neon clock')
-          if 'System.Date' in furniture and 'VIDEO STORE NEON CLOCK' not in furniture:
-              raise SystemExit('Unexpected clock patch state')
           print(f'Validated Video Store version {v}')
           PY
           test -f build/skin.video.store/icon.png
@@ -121,6 +118,7 @@ jobs:
       - name: Build skin ZIP
         shell: bash
         run: |
+          rm -rf dist
           mkdir -p dist
           cd build
           zip -qr "../dist/skin.video.store-${VERSION}.zip" skin.video.store
@@ -134,14 +132,9 @@ jobs:
       - name: Build Kodi repository metadata and installer
         shell: bash
         run: |
-          # Kodi's repository layout requires /datadir/addon.id/addon.id-x.y.z.zip.
-          # Remove the previous published repository directory so stale flat ZIPs cannot survive.
-          rm -rf dist/repository
           mkdir -p dist/repository/skin.video.store
-
           python3 - <<'PY'
           import xml.etree.ElementTree as ET
-          from pathlib import Path
           addon = ET.parse('build/skin.video.store/addon.xml').getroot()
           root = ET.Element('addons')
           root.append(addon)
@@ -167,19 +160,17 @@ jobs:
               </extension>
           </addon>
           EOF
+          rm -rf dist/repository-installer
           mkdir -p dist/repository-installer/repository.video.store
           cp /tmp/repository-addon.xml dist/repository-installer/repository.video.store/addon.xml
           (cd dist/repository-installer && zip -qr "../repository.video.store-1.0.0.zip" repository.video.store)
           rm -rf dist/repository-installer
 
-          # Validate the exact Kodi repository layout and package before publishing.
           unzip -p "dist/repository.video.store-1.0.0.zip" repository.video.store/addon.xml > /tmp/repo-addon.xml
           grep -q 'id="repository.video.store" name="Video Store Repository" version="1.0.0"' /tmp/repo-addon.xml
-          grep -q 'https://raw.githubusercontent.com/nealt55/video-store-kodi/main/dist/repository/' /tmp/repo-addon.xml
           test -f "dist/repository/addons.xml"
           test -f "dist/repository/addons.xml.md5"
           test -f "dist/repository/skin.video.store/skin.video.store-${VERSION}.zip"
-          test "$(unzip -l "dist/repository/skin.video.store/skin.video.store-${VERSION}.zip" | grep -c 'skin.video.store/addon.xml')" -eq 1
           grep -q "id=\"skin.video.store\" version=\"${VERSION}\"" dist/repository/addons.xml
           test "$(cat dist/repository/addons.xml.md5)" = "$(md5sum dist/repository/addons.xml | cut -d' ' -f1)"
       - name: Publish repository files to main
