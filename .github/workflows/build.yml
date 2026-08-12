@@ -27,29 +27,43 @@ jobs:
           set -e
           rm -rf build dist
           mkdir -p build dist
-
-          # Start with our pinned, known-good Arctic Zephyr base.
           unzip -q skin.arctic.zephyr.mod-master.zip -d build
           BASE_DIR=$(find build -mindepth 1 -maxdepth 1 -type d | head -n 1)
           mv "$BASE_DIR" build/skin.video.store
 
-          # Apply ONLY the files we deliberately maintain for Video Store.
           cp custom/skin.video.store/addon.xml build/skin.video.store/addon.xml
-          cp custom/skin.video.store/1080i/Home.xml build/skin.video.store/1080i/Home.xml
           cp custom/skin.video.store/icon.png build/skin.video.store/icon.png
           mkdir -p build/skin.video.store/media
           cp custom/video_store_background.jpg build/skin.video.store/media/video_store_background.jpg
 
-          # Basic sanity checks — keep these simple so they don't become another source of failures.
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('build/skin.video.store/1080i/Includes.xml')
+          s=p.read_text()
+          marker='    <include name="GlobalBackground">'
+          insert='''    <include name="GlobalBackground">\n        <control type="image" id="90001" description="Video Store Global Background">\n            <include>Dimensions_Fullscreen</include>\n            <aspectratio>scale</aspectratio>\n            <texture background="true">media/video_store_background.jpg</texture>\n        </control>'''
+          if marker not in s:
+              raise SystemExit('GlobalBackground include not found in original skin')
+          if 'description="Video Store Global Background"' not in s:
+              s=s.replace(marker, insert, 1)
+          p.write_text(s)
+          h=Path('build/skin.video.store/1080i/Home.xml')
+          hs=h.read_text()
+          start='        <control type="image" id="90001" description="Video Store Background">'
+          if start in hs:
+              a=hs.index(start)
+              b=hs.index('        </control>', a)+len('        </control>')
+              hs=hs[:a]+hs[b:]
+          h.write_text(hs)
+          PY
+
           grep -q "id=\"skin.video.store\"" build/skin.video.store/addon.xml
           grep -q "version=\"${VERSION}\"" build/skin.video.store/addon.xml
-          grep -q "video_store_background.jpg" build/skin.video.store/1080i/Home.xml
+          grep -q 'Video Store Global Background' build/skin.video.store/1080i/Includes.xml
           test -f build/skin.video.store/media/video_store_background.jpg
 
-          # Make the Kodi skin ZIP.
           (cd build && zip -qr "../dist/skin.video.store-${VERSION}.zip" skin.video.store)
 
-          # Repository metadata.
           mkdir -p dist/repository/skin.video.store
           python3 - <<'PY'
           import xml.etree.ElementTree as ET
@@ -61,7 +75,6 @@ jobs:
           md5sum dist/repository/addons.xml | cut -d' ' -f1 > dist/repository/addons.xml.md5
           cp "dist/skin.video.store-${VERSION}.zip" "dist/repository/skin.video.store/skin.video.store-${VERSION}.zip"
 
-          # Repository installer.
           mkdir -p dist/repository-installer/repository.video.store
           cat > dist/repository-installer/repository.video.store/addon.xml <<'EOF'
           <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
@@ -82,7 +95,6 @@ jobs:
           EOF
           (cd dist/repository-installer && zip -qr "../repository.video.store-1.0.0.zip" repository.video.store)
           rm -rf dist/repository-installer
-
           sha256sum "dist/skin.video.store-${VERSION}.zip" > dist/SHA256SUMS
 
       - name: Publish repository files
