@@ -38,53 +38,12 @@ jobs:
           cp custom/skin.video.store/addon.xml build/skin.video.store/addon.xml
           cp custom/skin.video.store/icon.png build/skin.video.store/icon.png
           mkdir -p build/skin.video.store/media
-          cp custom/video_store_background.jpg build/skin.video.store/media/video_store_background.jpg
-
-          python3 - <<'PY'
-          from pathlib import Path
-          p=Path('build/skin.video.store/1080i/Includes.xml')
-          s=p.read_text()
-
-          old='''    <include name="GlobalBackground">\n        <control type="image" id="90001" description="Video Store Global Background">\n            <include>Dimensions_Fullscreen</include>\n            <aspectratio>scale</aspectratio>\n            <texture background="true">media/video_store_background.jpg</texture>\n        </control>'''
-          s=s.replace(old, '    <include name="GlobalBackground">', 1)
-
-          s=s.replace('<texture colordiffuse="Background">common/bg.jpg</texture>',
-                      '<texture>media/video_store_background.jpg</texture>', 1)
-
-          needle='''        <control type="multiimage" description="Fanart">\n            <visible>!Skin.HasSetting(EnableEffects) | [Skin.HasSetting(EnableEffects) + !Skin.HasSetting(BlurOnHome)]</visible>'''
-          replacement='''        <control type="multiimage" description="Fanart">\n            <visible>false</visible>'''
-          if needle not in s:
-              raise SystemExit('First GlobalBackgroundExtended fanart control not found')
-          s=s.replace(needle, replacement, 1)
-
-          needle2='''        <control type="multiimage" description="Fanart">\n            <visible>Skin.HasSetting(EnableEffects) + Skin.HasSetting(BlurOnHome)</visible>'''
-          replacement2='''        <control type="multiimage" description="Fanart">\n            <visible>false</visible>'''
-          if needle2 not in s:
-              raise SystemExit('Blurred GlobalBackgroundExtended fanart control not found')
-          s=s.replace(needle2, replacement2, 1)
-
-          p.write_text(s)
-
-          h=Path('build/skin.video.store/1080i/Home.xml')
-          hs=h.read_text()
-          start='        <control type="image" id="90001" description="Video Store Background">'
-          if start in hs:
-              a=hs.index(start)
-              b=hs.index('        </control>', a)+len('        </control>')
-              hs=hs[:a]+hs[b:]
-          marker='    <controls>'
-          bg='''    <controls>\n        <control type="image" id="91000" description="Video Store Neon Background">\n            <left>0</left>\n            <top>0</top>\n            <width>100%</width>\n            <height>100%</height>\n            <visible>Window.IsActive(Home)</visible>\n            <texture>media/video_store_background.jpg</texture>\n            <aspectratio>scale</aspectratio>\n        </control>'''
-          if marker not in hs:
-              raise SystemExit('Home controls block not found')
-          hs=hs.replace(marker, bg, 1)
-          h.write_text(hs)
-          PY
+          cp custom/video_store_background.png build/skin.video.store/media/video_store_background.png
 
           grep -q "id=\"skin.video.store\"" build/skin.video.store/addon.xml
           grep -q "version=\"${VERSION}\"" build/skin.video.store/addon.xml
-          grep -q 'media/video_store_background.jpg' build/skin.video.store/1080i/Includes.xml
-          grep -q 'id="91000"' build/skin.video.store/1080i/Home.xml
-          test -f build/skin.video.store/media/video_store_background.jpg
+          test -f build/skin.video.store/media/video_store_background.png
+          grep -q 'video_store_background.png' build/skin.video.store/1080i/Home.xml
 
           (cd build && zip -qr "../dist/skin.video.store-${VERSION}.zip" skin.video.store)
 
