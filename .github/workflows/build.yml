@@ -7,6 +7,10 @@ on:
       - 'dist/**'
   workflow_dispatch:
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: write
 
@@ -44,11 +48,9 @@ jobs:
           old='''    <include name="GlobalBackground">\n        <control type="image" id="90001" description="Video Store Global Background">\n            <include>Dimensions_Fullscreen</include>\n            <aspectratio>scale</aspectratio>\n            <texture background="true">media/video_store_background.jpg</texture>\n        </control>'''
           s=s.replace(old, '    <include name="GlobalBackground">', 1)
 
-          # Replace the actual base texture and remove its colour tint.
           s=s.replace('<texture colordiffuse="Background">common/bg.jpg</texture>',
                       '<texture>media/video_store_background.jpg</texture>', 1)
 
-          # Do not let Arctic Zephyr's fanart multiimages cover the fixed Video Store background.
           needle='''        <control type="multiimage" description="Fanart">\n            <visible>!Skin.HasSetting(EnableEffects) | [Skin.HasSetting(EnableEffects) + !Skin.HasSetting(BlurOnHome)]</visible>'''
           replacement='''        <control type="multiimage" description="Fanart">\n            <visible>false</visible>'''
           if needle not in s:
@@ -63,9 +65,6 @@ jobs:
 
           p.write_text(s)
 
-          # Remove any previous Home.xml background control and add a guaranteed fullscreen
-          # image as the first Home control. No diffuse tint is used, so the image is shown
-          # at its native colours.
           h=Path('build/skin.video.store/1080i/Home.xml')
           hs=h.read_text()
           start='        <control type="image" id="90001" description="Video Store Background">'
@@ -125,11 +124,14 @@ jobs:
       - name: Publish repository files
         shell: bash
         run: |
+          set -e
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add dist/repository
           if ! git diff --cached --quiet; then
             git commit -m "Publish Video Store ${VERSION} repository"
+            git fetch origin main
+            git merge origin/main --no-edit -X ours
             git push
           fi
 
