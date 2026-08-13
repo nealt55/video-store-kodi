@@ -16,18 +16,14 @@
     <onunload condition="Skin.HasSetting(home.netflix.autoplay.trailer)">ClearProperty(listitem.trailer,home)</onunload>
     <controls>
         <include>GlobalBackground</include>
-        <include>HomeBackgroundPlaylist</include>
-        <control type="image" id="91000" description="Video Store Neon Background">
-            <left>0</left>
-            <top>0</top>
-            <width>100%</width>
-            <height>100%</height>
-            <visible>Window.IsActive(Home)</visible>
-            <texture>media/video_store_background.jpg</texture>
+        <control type="image" id="90001" description="Video Store Background">
+            <include>Dimensions_Fullscreen</include>
             <aspectratio>scale</aspectratio>
+            <texture background="true">media/video_store_background.jpg</texture>
         </control>
         <include condition="!$EXP[HomeIsVerticalMultiWidgets] + !$EXP[HomeIsModernMultiWidgets]">MovieSetsList</include>
         <include condition="$EXP[HasHomemenuAutoSlideOutAnimation] | $EXP[HasHomemenuAutoSlideOutAnimationOnlyIfWidgetIsFocused]">SlideOutHomemenuButton</include>
+        <include>HomeBackgroundPlaylist</include>
         <include>AlbumAndSetsCount</include>
         <include>ActorInfo</include>
         <include condition="$EXP[HomeIsVerticalMultiWidgets]">HomeVerticalMenuWidgets</include>
