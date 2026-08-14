@@ -39,12 +39,12 @@ jobs:
           cp custom/skin.video.store/icon.png build/skin.video.store/icon.png
           cp custom/skin.video.store/1080i/Home.xml build/skin.video.store/1080i/Home.xml
           mkdir -p build/skin.video.store/media
-          cp custom/video_store_background.jpg build/skin.video.store/media/video_store_background.jpg
+          cp video_store_background.png build/skin.video.store/media/video_store_background.png
 
           grep -q "id=\"skin.video.store\"" build/skin.video.store/addon.xml
           grep -q "version=\"${VERSION}\"" build/skin.video.store/addon.xml
-          test -f build/skin.video.store/media/video_store_background.jpg
-          grep -q 'video_store_background.jpg' build/skin.video.store/1080i/Home.xml
+          test -f build/skin.video.store/media/video_store_background.png
+          grep -q 'video_store_background.png' build/skin.video.store/1080i/Home.xml
 
           (cd build && zip -qr "../dist/skin.video.store-${VERSION}.zip" skin.video.store)
 
