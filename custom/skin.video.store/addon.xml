@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<addon id="skin.video.store" version="1.0.10" name="Video Store" provider-name="Video Store">
+<addon id="skin.video.store" version="1.0.11" name="Video Store" provider-name="Video Store">
     <requires>
         <import addon="xbmc.gui" version="5.17.0"/>
         <import addon="script.skinshortcuts" version="0.4.0"/>
@@ -21,7 +21,7 @@
             <icon>icon.png</icon>
             <fanart>fanart.jpg</fanart>
         </assets>
-        <news>1.0.10 - Restore working Video Store background build</news>
+        <news>1.0.11 - Adjust home menu positioning</news>
         <summary lang="en">A retro neon VHS rental-store themed Kodi skin.</summary>
         <description lang="en">Video Store is a retro neon VHS rental-store themed Kodi skin based on Arctic: Zephyr - Reloaded.</description>
     </extension>
