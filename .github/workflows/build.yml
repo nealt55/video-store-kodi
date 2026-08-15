@@ -41,10 +41,38 @@ jobs:
           mkdir -p build/skin.video.store/media
           cp video_store_background.png build/skin.video.store/media/video_store_background.png
 
+          # The main left menu lives in the base Arctic Zephyr include.
+          # Patch only that menu panel; do not alter the background implementation.
+          python3 - <<'PY'
+          from pathlib import Path
+          p = Path('build/skin.video.store/1080i/Includes_Home.xml')
+          s = p.read_text()
+          old = '''                <control type="panel" id="300">\n                    <animation effect="fade" start="100" end="33" time="400" condition="Control.HasFocus(301)">Conditional</animation>\n                    <include>Animation.Slide.Vertical.Menu</include>'''
+          new = '''                <control type="panel" id="300">\n                    <animation effect="fade" start="100" end="33" time="400" condition="Control.HasFocus(301)">Conditional</animation>\n                    <include>Animation.Slide.Vertical.Menu</include>'''
+          if old not in s:
+              raise SystemExit('Main menu panel anchor not found')
+          # Change only the first left position belonging to the main menu panel.
+          start = s.index(old)
+          end = s.index('<content>', start)
+          section = s[start:end]
+          if '<left>0</left>' not in section:
+              raise SystemExit('Main menu left position not found')
+          section = section.replace('<left>0</left>', '<left>-80</left>', 1)
+          s = s[:start] + section + s[end:]
+          p.write_text(s)
+
+          # Remove the previous mistaken HomeRow offset from the custom Home.xml.
+          hp = Path('build/skin.video.store/1080i/Home.xml')
+          h = hp.read_text()
+          h = h.replace('''            <control type="group" left="-80">\n                <include condition="!Skin.HasSetting(home.vertical) + !Skin.HasSetting(home.classicwidgets)">HomeRow</include>\n            </control>''', '''            <include condition="!Skin.HasSetting(home.vertical) + !Skin.HasSetting(home.classicwidgets)">HomeRow</include>''')
+          hp.write_text(h)
+          PY
+
           grep -q "id=\"skin.video.store\"" build/skin.video.store/addon.xml
           grep -q "version=\"${VERSION}\"" build/skin.video.store/addon.xml
           test -f build/skin.video.store/media/video_store_background.png
           grep -q 'video_store_background.png' build/skin.video.store/1080i/Home.xml
+          grep -q '<left>-80</left>' build/skin.video.store/1080i/Includes_Home.xml
 
           (cd build && zip -qr "../dist/skin.video.store-${VERSION}.zip" skin.video.store)
 
